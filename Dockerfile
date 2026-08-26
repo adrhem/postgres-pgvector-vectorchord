@@ -34,11 +34,11 @@ RUN mkdir -p /tmp/pgvector \
 # VectorChord 
 RUN mkdir -p /tmp/vectorchord \
     && cd /tmp/vectorchord \
-    && ARCH=$(uname -m | sed 's/^aarch64$/arm64/') \
+    && ARCH=$(dpkg --print-architecture) \
     && URL_VECTORCHORD="https://github.com/tensorchord/VectorChord/releases/download/${VECTORCHORD_VERSION}/postgresql-${POSTGRES_VERSION}-vchord_${VECTORCHORD_VERSION}-1_${ARCH}.deb" \
     && curl -fSL -o vectorchord.deb "${URL_VECTORCHORD}" \
-    && apt install ./vectorchord.deb \
-    && rm -rf /tmp/vectorchord
+    && apt-get update && apt-get install -y ./vectorchord.deb \
+    && cd / && rm -rf /tmp/vectorchord
 
 # Cleanup
 RUN apt-get purge -y --auto-remove build-essential curl unzip postgresql-server-dev-all

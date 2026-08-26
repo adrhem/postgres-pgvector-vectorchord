@@ -1,10 +1,7 @@
-name: postgres-shared
+name: postgres-pgvector-vectorchord
 services:
   db:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: postgres-shared
+    image: ghcr.io/adrhem/postgres-pgvector-vectorchord:latest
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}

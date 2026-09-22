@@ -1,9 +1,7 @@
 name: postgres-pgvector-vectorchord
 services:
   db:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/adrhem/postgres-pgvector-vectorchord:latest
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}

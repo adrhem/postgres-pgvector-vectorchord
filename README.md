@@ -3,7 +3,7 @@
 ### Version
 
 - [Postgres: 18](https://hub.docker.com/_/postgres)
-- [pgvector: 0.8.6](https://github.com/pgvector/pgvector)
+- [pgvector: 0.8.7](https://github.com/pgvector/pgvector)
 - [VectorChord: 1.1.1](https://github.com/supervc-stack/VectorChord)
 
 ### What's this?

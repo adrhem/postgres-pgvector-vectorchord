@@ -1,6 +1,6 @@
 FROM postgres:18 AS builder
 
-ENV PGVECTOR_VERSION="0.8.6"
+ENV PGVECTOR_VERSION="0.8.7"
 ENV VECTORCHORD_VERSION="1.1.1"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -15,8 +15,7 @@ PostgreSQL listens on `127.0.0.1:5432`. To accept other machines, set
 `POSTGRES_BIND_IP=0.0.0.0` in `.env`. Docker bypasses host firewalls such as `ufw`,
 so only do this on a trusted network.
 
-With an empty `POSTGRES_PASSWORD`, a password is generated on first start
-(`POSTGRES_PASSWORD_FILE` also works):
+With an empty `POSTGRES_PASSWORD`, a password is generated on first start:
 
 ```sh
 docker compose exec db sh -c 'cat "${PGDATA}.password"'

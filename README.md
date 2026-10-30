@@ -65,9 +65,16 @@ docker compose pull && docker compose up -d --wait
 Keep a copy off the server, test restoring it, and back up Immich's photos
 separately. `docker compose down -v` deletes the databases.
 
-New extension versions may need `ALTER EXTENSION vector UPDATE`,
-`ALTER EXTENSION vchord UPDATE` and a reindex; follow their release notes.
-A new PostgreSQL major version needs `pg_upgrade` or dump/restore.
+A new major image version (for example `18-2.x` to `18-3.0.0`) updates pgvector or
+VectorChord. The `18` tag gets these too, so check the release notes before pulling.
+After updating, run this in every database that uses the extensions:
+
+```sh
+docker compose exec db sh -c 'exec psql -X -U "$POSTGRES_USER" -d immich -c "ALTER EXTENSION vector UPDATE" -c "ALTER EXTENSION vchord UPDATE"'
+```
+
+Reindex vector indexes if the release notes say so. A new PostgreSQL major version
+needs `pg_upgrade` or dump/restore.
 
 ## Development
 
@@ -85,3 +92,4 @@ search, password authentication, and a container replacement with extension upda
 To release, push a tag `v<PostgreSQL major>-<version>`, for example `v18-1.2.3`. CI
 tests both architectures, then publishes `18-1.2.3`, `18-1.2`, `18` and `latest`.
 It rejects any other tag format. Pull requests are tested without publishing.
+Bump the major image version whenever pgvector or VectorChord changes.

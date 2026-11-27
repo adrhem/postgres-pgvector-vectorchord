@@ -1,24 +1,25 @@
-ARG VECTORCHORD_VERSION=1.1.1
+ARG VECTORCHORD_VERSION=1.5.0
 ARG TARGETARCH
 
+# VectorChord moved to pgsty/vchord; supervc-stack/VectorChord is no longer maintained.
 # BuildKit verifies each download. Get new digests with:
-# curl -fsSL https://api.github.com/repos/supervc-stack/VectorChord/releases/tags/VERSION | jq -r '.assets[] | "\(.name) \(.digest)"'
+# curl -fsSL https://api.github.com/repos/pgsty/vchord/releases/tags/VERSION | jq -r '.assets[] | "\(.name) \(.digest)"'
 FROM scratch AS vectorchord-amd64
 ARG VECTORCHORD_VERSION
-ADD --checksum=sha256:7637a18a97157db8d904bb7093e5ce33b6a395c0acac9ae6b660032f3d57a33e \
-    https://github.com/supervc-stack/VectorChord/releases/download/${VECTORCHORD_VERSION}/postgresql-18-vchord_${VECTORCHORD_VERSION}-1_amd64.deb /vectorchord.deb
+ADD --checksum=sha256:35f311f4015b82d8f375dbb93bbe6137c75618a69bb08bfcc019226c182ed99d \
+    https://github.com/pgsty/vchord/releases/download/${VECTORCHORD_VERSION}/postgresql-18-vchord_${VECTORCHORD_VERSION}-1_amd64.deb /vectorchord.deb
 
 FROM scratch AS vectorchord-arm64
 ARG VECTORCHORD_VERSION
-ADD --checksum=sha256:59dbe75a398c2df2849631de054d80e60a6c04499fa2d29eebdb04e40f28501c \
-    https://github.com/supervc-stack/VectorChord/releases/download/${VECTORCHORD_VERSION}/postgresql-18-vchord_${VECTORCHORD_VERSION}-1_arm64.deb /vectorchord.deb
+ADD --checksum=sha256:5fbe0c3a4d86727f0ed0846d4f99db748d5802a90b35bb0652c36c8f60601662 \
+    https://github.com/pgsty/vchord/releases/download/${VECTORCHORD_VERSION}/postgresql-18-vchord_${VECTORCHORD_VERSION}-1_arm64.deb /vectorchord.deb
 
 FROM vectorchord-${TARGETARCH} AS vectorchord
 
 FROM postgres:18
 
 # Signed PGDG package. Immich requires pgvector < 0.9; stay on 0.8.x until it supports newer.
-ARG PGVECTOR_VERSION=0.8.7-1.pgdg13+1
+ARG PGVECTOR_VERSION=0.8.7-2.pgdg13+1
 
 LABEL org.opencontainers.image.title="PostgreSQL 18 + pgvector + VectorChord"
 LABEL org.opencontainers.image.description="PostgreSQL 18 with pgvector and VectorChord for Immich and homelabs."

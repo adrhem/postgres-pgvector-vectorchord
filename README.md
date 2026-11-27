@@ -1,8 +1,8 @@
 # PostgreSQL + pgvector + VectorChord
 
 PostgreSQL 18 with [pgvector 0.8.7](https://github.com/pgvector/pgvector) and
-[VectorChord 1.1.1](https://github.com/supervc-stack/VectorChord), for Immich and
-homelabs. AMD64 and ARM64.
+[VectorChord 1.5.0](https://github.com/pgsty/vchord), for Immich and homelabs.
+AMD64 and ARM64.
 
 ## Start
 
@@ -67,7 +67,8 @@ separately. `docker compose down -v` deletes the databases.
 
 A new major image version (for example `18-2.x` to `18-3.0.0`) updates pgvector or
 VectorChord. The `18` tag gets these too, so check the release notes before pulling.
-After updating, run this in every database that uses the extensions:
+Stop Immich first: it does not start until the extensions are updated. After
+pulling, run this in every database that uses the extensions, then start Immich:
 
 ```sh
 docker compose exec db sh -c 'exec psql -X -U "$POSTGRES_USER" -d immich -c "ALTER EXTENSION vector UPDATE" -c "ALTER EXTENSION vchord UPDATE"'

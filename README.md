@@ -50,8 +50,8 @@ CREATE EXTENSION earthdistance CASCADE;
 ```
 
 Attach Immich to the Docker network `postgres-pgvector-vectorchord_default` (declared
-as `external: true` in its Compose file) and connect to `db:5432`. pgvector stays on
-0.8.x while Immich requires a version below 0.9; see Immich's
+as `external: true` in its Compose file) and connect to `db:5432`. Immich requires
+pgvector below 1 and VectorChord below 2; see Immich's
 [standalone PostgreSQL guide](https://docs.immich.app/administration/postgres-standalone/).
 
 ## Backups and updates

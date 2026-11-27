@@ -18,7 +18,7 @@ FROM vectorchord-${TARGETARCH} AS vectorchord
 
 FROM postgres:18
 
-# Signed PGDG package. Immich requires pgvector < 0.9; stay on 0.8.x until it supports newer.
+# Signed PGDG package. Immich requires pgvector < 1.
 ARG PGVECTOR_VERSION=0.8.7-2.pgdg13+1
 
 LABEL org.opencontainers.image.title="PostgreSQL 18 + pgvector + VectorChord"

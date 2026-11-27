@@ -1,7 +1,7 @@
 name: postgres-pgvector-vectorchord
 services:
   db:
-    image: ghcr.io/adrhem/postgres-pgvector-vectorchord:18
+    image: ghcr.io/adrhem/postgres-pgvector-vectorchord:19
     restart: unless-stopped
     shm_size: 256mb
     stop_grace_period: 1m

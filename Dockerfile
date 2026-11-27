@@ -6,23 +6,23 @@ ARG TARGETARCH
 # curl -fsSL https://api.github.com/repos/pgsty/vchord/releases/tags/VERSION | jq -r '.assets[] | "\(.name) \(.digest)"'
 FROM scratch AS vectorchord-amd64
 ARG VECTORCHORD_VERSION
-ADD --checksum=sha256:35f311f4015b82d8f375dbb93bbe6137c75618a69bb08bfcc019226c182ed99d \
-    https://github.com/pgsty/vchord/releases/download/${VECTORCHORD_VERSION}/postgresql-18-vchord_${VECTORCHORD_VERSION}-1_amd64.deb /vectorchord.deb
+ADD --checksum=sha256:ae2c40877942f4882c7ebb7ef02553e6f2c83d5800ae98bc8a9bdc92342edf9e \
+    https://github.com/pgsty/vchord/releases/download/${VECTORCHORD_VERSION}/postgresql-19-vchord_${VECTORCHORD_VERSION}-1_amd64.deb /vectorchord.deb
 
 FROM scratch AS vectorchord-arm64
 ARG VECTORCHORD_VERSION
-ADD --checksum=sha256:5fbe0c3a4d86727f0ed0846d4f99db748d5802a90b35bb0652c36c8f60601662 \
-    https://github.com/pgsty/vchord/releases/download/${VECTORCHORD_VERSION}/postgresql-18-vchord_${VECTORCHORD_VERSION}-1_arm64.deb /vectorchord.deb
+ADD --checksum=sha256:53d31a55d7591131772fd930507e2cd95c6041a352fd2e37846cf50c76740751 \
+    https://github.com/pgsty/vchord/releases/download/${VECTORCHORD_VERSION}/postgresql-19-vchord_${VECTORCHORD_VERSION}-1_arm64.deb /vectorchord.deb
 
 FROM vectorchord-${TARGETARCH} AS vectorchord
 
-FROM postgres:18
+FROM postgres:19
 
 # Signed PGDG package. Immich requires pgvector < 1.
 ARG PGVECTOR_VERSION=0.8.7-2.pgdg13+1
 
-LABEL org.opencontainers.image.title="PostgreSQL 18 + pgvector + VectorChord"
-LABEL org.opencontainers.image.description="PostgreSQL 18 with pgvector and VectorChord for Immich and homelabs."
+LABEL org.opencontainers.image.title="PostgreSQL 19 + pgvector + VectorChord"
+LABEL org.opencontainers.image.description="PostgreSQL 19 with pgvector and VectorChord for Immich and homelabs."
 LABEL org.opencontainers.image.authors="Adrián HM <dev.foe555@slmail.me>"
 LABEL org.opencontainers.image.source="https://github.com/adrhem/postgres-pgvector-vectorchord"
 LABEL org.opencontainers.image.licenses="MIT"

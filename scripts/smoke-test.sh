@@ -62,7 +62,7 @@ start_postgres() {
   check_password
 }
 
-# PostgreSQL 18 upgrades only; use pg_upgrade or dump/restore for a new major.
+# Same PostgreSQL major only; a new major needs pg_upgrade or dump/restore.
 start_postgres "${UPGRADE_FROM_IMAGE:-$image}"
 docker exec -i "$container" psql -X -v ON_ERROR_STOP=1 -v upgrade=false -U postgres -d smoke < "$script_dir/smoke-test.sql"
 

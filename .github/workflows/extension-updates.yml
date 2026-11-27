@@ -1,0 +1,67 @@
+name: Check extension updates
+
+# Dependabot cannot track VectorChord (an ADD URL) or pgvector (a PGDG apt package),
+# so this opens an issue when either has a newer version than the Dockerfile.
+on:
+  schedule:
+    - cron: '0 15 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Compare versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pg_major=$(sed -n 's/^FROM postgres:\([0-9]*\)$/\1/p' Dockerfile)
+          vchord_current=$(sed -n 's/^ARG VECTORCHORD_VERSION=//p' Dockerfile)
+          pgvector_current=$(sed -n 's/^ARG PGVECTOR_VERSION=//p' Dockerfile)
+          [ -n "$pg_major" ] && [ -n "$vchord_current" ] && [ -n "$pgvector_current" ]
+
+          release=$(gh api repos/pgsty/vchord/releases/latest)
+          vchord_latest=$(jq -r .tag_name <<< "$release")
+          vchord_debs=$(jq -r --arg pg "$pg_major" \
+            '[.assets[].name | select(startswith("postgresql-" + $pg + "-vchord_") and endswith(".deb"))] | length' <<< "$release")
+
+          pgvector_latest=
+          while read -r version; do
+            if [ -z "$pgvector_latest" ] || dpkg --compare-versions "$version" gt "$pgvector_latest"; then
+              pgvector_latest=$version
+            fi
+          done < <(curl -fsSL https://apt.postgresql.org/pub/repos/apt/dists/trixie-pgdg/main/binary-amd64/Packages.gz \
+            | gunzip | awk -v name="postgresql-${pg_major}-pgvector" '/^Package: /{p = ($2 == name)} p && /^Version: /{print $2}')
+          [ -n "$pgvector_latest" ]
+
+          echo "PostgreSQL $pg_major: vchord $vchord_current -> $vchord_latest ($vchord_debs debs), pgvector $pgvector_current -> $pgvector_latest"
+
+          updates=() body=()
+          if dpkg --compare-versions "$vchord_latest" gt "$vchord_current"; then
+            updates+=("vchord $vchord_latest")
+            body+=("- VectorChord \`$vchord_current\` → [\`$vchord_latest\`](https://github.com/pgsty/vchord/releases/tag/$vchord_latest) ($vchord_debs \`.deb\` files for PostgreSQL $pg_major). Update \`VECTORCHORD_VERSION\` and both \`--checksum\` digests, and read the release notes for reindex steps. Immich requires VectorChord < 2.")
+          fi
+          if dpkg --compare-versions "$pgvector_latest" gt "$pgvector_current"; then
+            updates+=("pgvector $pgvector_latest")
+            body+=("- pgvector \`$pgvector_current\` → \`$pgvector_latest\` (PGDG \`postgresql-${pg_major}-pgvector\`). Update \`PGVECTOR_VERSION\`. Immich requires pgvector < 1.")
+          fi
+          [ "${#updates[@]}" -gt 0 ] || exit 0
+
+          title="Extension updates for PostgreSQL $pg_major: $(IFS=,; sed 's/,/, /g' <<< "${updates[*]}")"
+          if gh issue list --state open --limit 200 --json title --jq '.[].title' | grep -Fx -- "$title" >/dev/null; then
+            echo "Already open: $title"
+            exit 0
+          fi
+          printf '%s\n' "${body[@]}" "" "A new extension version needs a major image version bump." \
+            | gh issue create --title "$title" --body-file -

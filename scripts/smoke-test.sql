@@ -54,11 +54,11 @@ DROP INDEX smoke_hnsw_idx;
 CREATE INDEX smoke_vchord_idx ON smoke_vectors USING vchordrq (embedding vector_l2_ops);
 \endif
 
--- Immich requires pgvector < 0.9.
+-- Immich requires pgvector < 1.
 DO $$
 BEGIN
-    IF ((SELECT extversion FROM pg_extension WHERE extname = 'vector') ~ '^0\.8\.') IS NOT TRUE THEN
-        RAISE EXCEPTION 'Immich requires pgvector 0.8.x';
+    IF ((SELECT extversion FROM pg_extension WHERE extname = 'vector') ~ '^0\.') IS NOT TRUE THEN
+        RAISE EXCEPTION 'Immich requires pgvector < 1';
     END IF;
 END;
 $$;

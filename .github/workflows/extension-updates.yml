@@ -1,0 +1,81 @@
+name: Check extension updates
+
+# Dependabot cannot track VectorChord (an ADD URL) or pgvector (a PGDG apt package),
+# so this keeps one issue open while either has a newer version than the Dockerfile.
+on:
+  schedule:
+    - cron: '0 15 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Compare versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pg_major=$(sed -n 's/^FROM postgres:\([0-9]*\)$/\1/p' Dockerfile)
+          vchord_current=$(sed -n 's/^ARG VECTORCHORD_VERSION=//p' Dockerfile)
+          pgvector_current=$(sed -n 's/^ARG PGVECTOR_VERSION=//p' Dockerfile)
+          if [ -z "$pg_major" ] || [ -z "$vchord_current" ] || [ -z "$pgvector_current" ]; then
+            echo "::error::Could not read the PostgreSQL, VectorChord or pgvector version from the Dockerfile"
+            exit 1
+          fi
+
+          release=$(gh api repos/pgsty/vchord/releases/latest) \
+            || { echo "::error::Could not read the latest pgsty/vchord release"; exit 1; }
+          vchord_latest=$(jq -r .tag_name <<< "$release")
+          # The Dockerfile needs a .deb for this PostgreSQL major on both architectures.
+          vchord_packaged=$(jq -r --arg pg "$pg_major" '.tag_name as $v | [.assets[].name] as $names
+            | all("amd64", "arm64"; . as $arch | $names | index(["postgresql-\($pg)-vchord_\($v)-1_\($arch).deb"]) != null)' <<< "$release")
+
+          curl -fsSL -o packages.gz https://apt.postgresql.org/pub/repos/apt/dists/trixie-pgdg/main/binary-amd64/Packages.gz \
+            || { echo "::error::Could not download the PGDG package index"; exit 1; }
+          pgvector_latest=
+          while read -r version; do
+            if [ -z "$pgvector_latest" ] || dpkg --compare-versions "$version" gt "$pgvector_latest"; then
+              pgvector_latest=$version
+            fi
+          done < <(gunzip -c packages.gz | awk -v name="postgresql-${pg_major}-pgvector" '/^Package: /{p = ($2 == name)} p && /^Version: /{print $2}')
+          if [ -z "$pgvector_latest" ]; then
+            echo "::error::postgresql-${pg_major}-pgvector is not in PGDG trixie-pgdg"
+            exit 1
+          fi
+
+          echo "PostgreSQL $pg_major: vchord $vchord_current -> $vchord_latest (packaged: $vchord_packaged), pgvector $pgvector_current -> $pgvector_latest"
+
+          body=()
+          if dpkg --compare-versions "$vchord_latest" gt "$vchord_current"; then
+            if [ "$vchord_packaged" = true ]; then
+              body+=("- VectorChord \`$vchord_current\` → [\`$vchord_latest\`](https://github.com/pgsty/vchord/releases/tag/$vchord_latest). Update \`VECTORCHORD_VERSION\` and both \`--checksum\` digests, and read the release notes for reindex steps. Immich requires VectorChord < 2.")
+            else
+              echo "::notice::VectorChord $vchord_latest has no PostgreSQL $pg_major .deb for both architectures yet"
+            fi
+          fi
+          if dpkg --compare-versions "$pgvector_latest" gt "$pgvector_current"; then
+            body+=("- pgvector \`$pgvector_current\` → \`$pgvector_latest\` (PGDG \`postgresql-${pg_major}-pgvector\`). Update \`PGVECTOR_VERSION\`. Immich requires pgvector < 1.")
+          fi
+          [ "${#body[@]}" -gt 0 ] || exit 0
+          body+=("" "A new extension version needs a major image version bump.")
+
+          # A stable title keeps one issue per PostgreSQL major; newer versions update its body.
+          title="Extension updates for PostgreSQL $pg_major"
+          issues=$(gh issue list --state open --limit 200 --json number,title)
+          number=$(jq -r --arg title "$title" 'first(.[] | select(.title == $title) | .number) // empty' <<< "$issues")
+          if [ -n "$number" ]; then
+            printf '%s\n' "${body[@]}" | gh issue edit "$number" --body-file -
+          else
+            printf '%s\n' "${body[@]}" | gh issue create --title "$title" --body-file -
+          fi

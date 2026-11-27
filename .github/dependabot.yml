@@ -1,0 +1,11 @@
+# Dependabot cannot track the extensions: VectorChord is an ADD URL and pgvector
+# an apt package, neither of which it supports.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
